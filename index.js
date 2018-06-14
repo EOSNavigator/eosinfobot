@@ -1,6 +1,7 @@
 const { Composer, log, session, Markup } = require('micro-bot')
 const msg = require('./messages')
 const Eos = require('eosjs')
+const producerSearch = require('./lib/producerSearch')
 
 // Default configuration
 const config = {
@@ -26,13 +27,24 @@ app.command('start', (ctx) =>
   )
 )
 
-app.command('info', ({ reply }) => 
+app.command('info', (ctx) =>
   eos.getInfo((error, result) => {
-    reply(`info: ${JSON.stringify(result)}`)
+    ctx.reply(`info: ${JSON.stringify(result)}`)
     console.log(error, JSON.stringify(result))
   })
 )
 
+app.on('inline_query', async ({ inlineQuery, answerInlineQuery }) => {
+  const offset = parseInt(inlineQuery.offset, 1) || 0
+  const query = inlineQuery.query || ''
+  if (query.length >= 12) {
+    const result = await producerSearch(query)
+    console.log(result)
+    return answerInlineQuery(result, { next_offset: offset + 2 })
+  }
+})
+
 app.command('help', ctx => ctx.replyWithMarkdown(msg.help))
+// app.hears(/(так)|(ишо)/i, ctx => ctx.replyWithMarkdown(msg.formatQuote(getQuote({ details: true }))))
 
 module.exports = app
