@@ -8,7 +8,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "dev": "supervisor -x micro-bot index.js",
+    "dev": "source ./.env && micro-bot -t ${BOT_TOKEN_DEV}",
     "start": "micro-bot",
     "now-start": "micro-bot -d ${NOW_URL}",
     "lint": "eslint .",
@@ -20,7 +20,11 @@
   "author": "Shakhruz Ashirov <shakhruz@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "micro-bot": "^2.2.4"
+    "eosjs": "^14.1.1",
+    "markup": "^0.0.4",
+    "micro-bot": "^2.2.4",
+    "source": "^0.0.3",
+    "standard": "^11.0.1"
   },
   "devDependencies": {
     "eslint": "^4.17.0",

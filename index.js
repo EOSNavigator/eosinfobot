@@ -1,14 +1,38 @@
-const { Composer, log, session } = require('micro-bot')
+const { Composer, log, session, Markup } = require('micro-bot')
+const msg = require('./messages')
+const Eos = require('eosjs')
 
-const bot = new Composer()
+// Default configuration
+const config = {
+  chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
+  httpEndpoint: 'https://eos.greymass.com',
+  expireInSeconds: 60,
+  broadcast: true,
+  debug: false,
+  sign: true
+}
 
-bot.use(log())
-bot.use(session())
+const eos = Eos(config)
+const app = new Composer()
 
-bot.start(({ reply }) => reply('Welcome message'))
-bot.help(({ reply }) => reply('Helo message'))
-bot.settings(({ reply }) => reply('Bot settings'))
+app.use(log())
+app.use(session())
 
-bot.command('date', ({ reply }) => reply(`Server time: ${Date()}`))
+app.command('start', (ctx) =>
+  ctx.replyWithMarkdown(msg.start, Markup
+    .keyboard([['info', 'help']])
+    .resize()
+    .extra()
+  )
+)
 
-module.exports = bot
+app.command('info', ({ reply }) => 
+  eos.getInfo((error, result) => {
+    reply(`info: ${JSON.stringify(result)}`)
+    console.log(error, JSON.stringify(result))
+  })
+)
+
+app.command('help', ctx => ctx.replyWithMarkdown(msg.help))
+
+module.exports = app
