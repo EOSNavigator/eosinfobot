@@ -22,6 +22,8 @@
   "dependencies": {
     "eosjs": "^14.1.1",
     "fs": "^0.0.1-security",
+    "json-more": "^0.7.0",
+    "lodash": "^4.17.10",
     "markup": "^0.0.4",
     "micro-bot": "^2.2.4",
     "source": "^0.0.3",

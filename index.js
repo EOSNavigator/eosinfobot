@@ -35,12 +35,12 @@ app.command('info', (ctx) =>
 )
 
 app.on('inline_query', async ({ inlineQuery, answerInlineQuery }) => {
-  const offset = parseInt(inlineQuery.offset, 1) || 0
+  const offset = parseInt(inlineQuery.offset) || 0
   const query = inlineQuery.query || ''
-  if (query.length >= 3) {
-    const result = await producerSearch(query)
-    console.log(result)
-    return answerInlineQuery(result, { next_offset: offset + 2 })
+  if (query.length >= 1) {
+    const result = await producerSearch(query, offset)
+    console.log(result.length, ' producers: ', result)
+    return answerInlineQuery(result, { next_offset: offset + result.length })
   }
 })
 
