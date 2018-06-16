@@ -1028,6 +1028,10 @@ js-yaml@^3.9.1:
     argparse "^1.0.7"
     esprima "^4.0.0"
 
+json-beautify@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/json-beautify/-/json-beautify-1.0.1.tgz#598b50d4c8ea9b8fca5abbb40b7e2cbd3ad4c2fc"
+
 json-more@^0.7.0:
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/json-more/-/json-more-0.7.0.tgz#07cc9a07424fd0615e560a231d6de4962759bc90"

@@ -93,10 +93,19 @@ app.command('list', ctx => {
   Account.find((err, accounts) => {
     if (err) return console.error(err)
     else {
-      console.log('found accounts: ', accounts)
-      ctx.replyWithMarkdown(JSON.stringify(accounts))
+      if (accounts && accounts.length > 0) {
+        console.log('found accounts: ', accounts)
+        ctx.replyWithMarkdown(JSON.stringify(accounts))
+      } else {
+        console.log('there are no accounts to monitor')
+        ctx.replyWithMarkdown('there are no accounts to monitor')
+      }
     }
   })
 })
+
+// launch account monitoring
+const monitorAccounts = require('./lib/monitorAccounts')
+setInterval(monitorAccounts, 2000)
 
 module.exports = app

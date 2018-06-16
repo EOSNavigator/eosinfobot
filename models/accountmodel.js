@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const accountSchema = mongoose.Schema({
   account_name: {type: String, required: true, max: 12},
   last_update: {type: Date, default: Date.now},
-  last_balance: {type: Number}
+  last_action_seq: {type: Number, default: -1}
 })
 
 accountSchema.methods.info = function () {

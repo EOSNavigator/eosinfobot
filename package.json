@@ -23,6 +23,7 @@
     "dotenv": "^6.0.0",
     "eosjs": "^14.1.1",
     "fs": "^0.0.1-security",
+    "json-beautify": "^1.0.1",
     "json-more": "^0.7.0",
     "lodash": "^4.17.10",
     "markup": "^0.0.4",
