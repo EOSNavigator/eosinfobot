@@ -1,6 +1,7 @@
 require('dotenv').config()
 const msg = require('./messages')
 const producerSearch = require('./lib/producerSearch')
+const _ = require('lodash')
 
 // Connect to MongoDB
 const mongoose = require('mongoose')
@@ -62,7 +63,7 @@ app.on('inline_query', async ({ inlineQuery, answerInlineQuery }) => {
 app.command('help', ctx => ctx.replyWithMarkdown(msg.help))
 
 // Add account to the monitoring list
-app.command('add', ctx => {
+app.command('watch_account', ctx => {
   const {text} = ctx.message
   const index = text.trim().indexOf(' ')
   const query = index > 0 ? text.substr(index + 1) : ''
@@ -71,38 +72,50 @@ app.command('add', ctx => {
     // check if the account exists
     console.log('find account ' + query)
     Account.findOne({account_name: query}, (err, acc) => {
-      if (!err && !acc) {
+      if (err) return console.log(err)
+      if (!acc) {
         // account not found
         console.log('account ', query, ' not found, adding it...')
-        var newAcc = new Account({ account_name: query })
+        var newAcc = new Account({ account_name: query, users: [{chat: ctx.chat, from: ctx.from}] })
         newAcc.save(function (err, acc) {
           if (err) return console.error(err)
           console.log('added new account: ', acc)
-          ctx.replyWithMarkdown('added account ' + query)
+          ctx.replyWithMarkdown('you will be notified when there will be new actions on account ' + query)
         })
       } else {
-        console.log('found account ', acc)
-        ctx.replyWithMarkdown('account ' + query + ' already being monitored ')
+        console.log('found account ', acc, 'adding user to watchers')
+        if (!_.find(acc.users, u => u.from.id === ctx.from.id)) {
+          // user is not in the list
+          acc.users = acc.users.concat([{chat: ctx.chat, from: ctx.from}])
+          acc.save(function (err, acc) {
+            if (err) return console.error(err)
+            console.log('added new user to account: ', acc)
+            ctx.replyWithMarkdown('you will be notified when there will be new actions on account ' + query)
+          })
+        } else {
+          // user already in the list
+          ctx.replyWithMarkdown('you are already subscribed for notifications for this account ')
+        }
       }
     })
   }
 })
 
-// List all accounts
-app.command('list', ctx => {
-  Account.find((err, accounts) => {
-    if (err) return console.error(err)
-    else {
-      if (accounts && accounts.length > 0) {
-        console.log('found accounts: ', accounts)
-        ctx.replyWithMarkdown(JSON.stringify(accounts))
-      } else {
-        console.log('there are no accounts to monitor')
-        ctx.replyWithMarkdown('there are no accounts to monitor')
-      }
-    }
-  })
-})
+// // List all accounts
+// app.command('list', ctx => {
+//   Account.find((err, accounts) => {
+//     if (err) return console.error(err)
+//     else {
+//       if (accounts && accounts.length > 0) {
+//         console.log('found accounts: ', accounts)
+//         ctx.replyWithMarkdown(JSON.stringify(accounts))
+//       } else {
+//         console.log('there are no accounts to monitor')
+//         ctx.replyWithMarkdown('there are no accounts to monitor')
+//       }
+//     }
+//   })
+// })
 
 // launch account monitoring
 const monitorAccounts = require('./lib/monitorAccounts')
