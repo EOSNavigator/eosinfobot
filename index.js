@@ -104,10 +104,10 @@ app.command('watch_account', ctx => {
 
 // List all accounts
 app.command('producers', ctx => {
-  eos.getProducers({json: true}, (error, result) => {
+  eos.getProducers({json: true, limit: 100}, (error, result) => {
     if (error) return console.log(error)
     if (result && result.rows && result.rows.length > 0) {
-      ctx.replyWithMarkdown(formatProducersList(result.rows))
+      ctx.reply(formatProducersList(result.rows))
     } else {
       ctx.replyWithMarkdown('There are no producers')
     }
