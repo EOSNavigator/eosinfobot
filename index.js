@@ -1,6 +1,7 @@
 require('dotenv').config()
 const msg = require('./messages')
 const producerSearch = require('./lib/producerSearch')
+const formatProducer = require('./lib/formatProducer')
 const _ = require('lodash')
 
 // Connect to MongoDB
@@ -101,6 +102,20 @@ app.command('watch_account', ctx => {
   }
 })
 
+// List all accounts
+app.command('producers', ctx => {
+  eos.getProducers({json: true, limit: 21}, (error, result) => {
+    if (error) return console.log(error)
+    if (result && result.rows && result.rows.length > 0) {
+      result.rows.forEach(producer => {
+        ctx.replyWithMarkdown(formatProducer(producer))
+      })
+    } else {
+      ctx.replyWithMarkdown('There are no producers')
+    }
+  })
+})
+
 // // List all accounts
 // app.command('list', ctx => {
 //   Account.find((err, accounts) => {
@@ -119,6 +134,6 @@ app.command('watch_account', ctx => {
 
 // launch account monitoring
 const monitorAccounts = require('./lib/monitorAccounts')
-setInterval(monitorAccounts, 2000)
+// setInterval(monitorAccounts, 2000)
 
 module.exports = app
