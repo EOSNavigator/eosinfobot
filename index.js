@@ -1,4 +1,5 @@
 require('dotenv').config()
+const dateFormat = require('dateformat')
 const msg = require('./messages')
 const producerSearch = require('./lib/producerSearch')
 const formatProducersList = require('./lib/formatProducersList')
@@ -44,12 +45,27 @@ app.command('start', (ctx) =>
   )
 )
 
-app.command('info', (ctx) =>
+app.command('info', (ctx) => {
   eos.getInfo((error, result) => {
-    ctx.reply(`info: ${JSON.stringify(result)}`)
-    console.log(error, JSON.stringify(result))
+    console.log(error, JSON.stringify(result, null, 2))
+    const info = 'chainId: ' + result.chain_id + '\n' +
+    '*' + dateFormat(Date.parse(result.head_block_time), '🗓 *ddd, mmm dS, yyyy, 🕐 h:MM:ss*') + '*\n' +
+    '🗳 block #*' + result.head_block_num + '* lib: *' + result.last_irreversible_block_num + '*\n 💼 producer: *' +
+    result.head_block_producer + '*'
+
+    ctx.replyWithMarkdown(info)
+
+    eos.getProducers({json: true, limit: 500}, (error, result) => {
+      if (error) return console.log(error)
+      if (result && result.rows && result.rows.length > 0) {
+        ctx.replyWithMarkdown('*Top 21 producers: *\n' + formatProducersList(result.rows, 21))
+      } else {
+        ctx.replyWithMarkdown('There are no producers')
+      }
+    })
+
   })
-)
+})
 
 app.on('inline_query', async ({ inlineQuery, answerInlineQuery }) => {
   const offset = parseInt(inlineQuery.offset) || 0
@@ -91,11 +107,11 @@ app.command('watch_account', ctx => {
           acc.save(function (err, acc) {
             if (err) return console.error(err)
             console.log('added new user to account: ', acc)
-            ctx.replyWithMarkdown('you will be notified when there will be new actions on account ' + query)
+            ctx.replyWithMarkdown('*Done*. You will be notified when there will be new actions on account ' + query)
           })
         } else {
           // user already in the list
-          ctx.replyWithMarkdown('you are already subscribed for notifications for this account ')
+          ctx.replyWithMarkdown('*Done*. you are already subscribed for notifications for this account ')
         }
       }
     })
@@ -132,6 +148,6 @@ app.command('producers', ctx => {
 
 // launch account monitoring
 const monitorAccounts = require('./lib/monitorAccounts')
-// setInterval(monitorAccounts, 2000)
+setInterval(monitorAccounts, 2000)
 
 module.exports = app

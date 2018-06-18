@@ -21,6 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "bn.js": "^4.11.8",
+    "dateformat": "^3.0.3",
     "dotenv": "^6.0.0",
     "eosjs": "^14.1.1",
     "fs": "^0.0.1-security",
