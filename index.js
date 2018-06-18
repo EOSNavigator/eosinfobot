@@ -46,10 +46,62 @@ app.command('start', (ctx) =>
 
 app.command('info', (ctx) =>
   eos.getInfo((error, result) => {
-    ctx.reply(`info: ${JSON.stringify(result)}`)
-    console.log(error, JSON.stringify(result))
+    ctx.replyWithMarkdown(`info:\n  
+    *head_block_num: *${JSON.parse(JSON.stringify(result)).head_block_num}
+    *last_irreversible_block_num: *${JSON.parse(JSON.stringify(result)).last_irreversible_block_num}
+    *head_block_time: *${JSON.parse(JSON.stringify(result)).head_block_time}
+    *head_block_producer: *${JSON.parse(JSON.stringify(result)).head_block_producer}
+    `)
+    console.log(error, JSON.parse(JSON.stringify(result)).head_block_num)
+    console.log(error, JSON.parse(JSON.stringify(result)).last_irreversible_block_num)
+    console.log(error, JSON.parse(JSON.stringify(result)).head_block_time)
+    console.log(error, JSON.parse(JSON.stringify(result)).head_block_producer)
+    console.log(JSON.parse(JSON.stringify(ctx.message)).text.substring(6))
   })
 )
+
+app.command('account', (ctx) =>
+  eos.getAccount({'account_name': JSON.parse(JSON.stringify(ctx.message)).text.substring(9)}, (error, result) => {
+    ctx.replyWithMarkdown(`*account *${JSON.parse(JSON.stringify(result)).account_name}:
+*created: *${JSON.parse(JSON.stringify(result)).created}
+*last_code_update: *${JSON.parse(JSON.stringify(result)).last_code_update}
+*balance: *${JSON.parse(JSON.stringify(result)).core_liquid_balance}
+*cpu_weight: *${JSON.parse(JSON.stringify(result)).total_resources.cpu_weight}
+*net_weight: *${JSON.parse(JSON.stringify(result)).total_resources.net_weight}
+*ram_bytes: *${JSON.parse(JSON.stringify(result)).total_resources.ram_bytes}
+*last_vote_weight: *${JSON.parse(JSON.stringify(result)).voter_info.last_vote_weight}`)
+    console.log(error, JSON.parse(JSON.stringify(result)))
+  })
+)
+
+app.command('trx', (ctx) =>
+  eos.getAccount({'id': JSON.parse(JSON.stringify(ctx.message)).text.substring(5)}, (error, result) => {
+    ctx.replyWithMarkdown(`Transaction details:\n
+    *id: *${JSON.parse(JSON.stringify(result)).id}
+    *block_time: *${JSON.parse(JSON.stringify(result)).block_time}
+    *last_irreversible_block: *${JSON.parse(JSON.stringify(result)).last_irreversible_block}
+    `)
+    console.log(error, JSON.parse(JSON.stringify(result)))
+  })
+)
+
+app.command('block', (ctx) => {
+  var answer = ''
+  eos.getBlock({'block_num_or_id': JSON.parse(JSON.stringify(ctx.message)).text.substring(7)}, (error, result) => {
+    answer += `*Block ${JSON.parse(JSON.stringify(ctx.message)).text.substring(7)}*:
+${JSON.parse(JSON.stringify(result)).timestamp}
+*Producer: *${JSON.parse(JSON.stringify(result)).producer}
+*Transactions(account,name,memo): *`
+    for (var i = 0; i < (JSON.parse(JSON.stringify(result)).transactions).length; i++) {
+      for (var k = 0; k < JSON.parse(JSON.stringify(result)).transactions[i].trx.transaction.actions.length; k++) {
+        answer += `
+  ${JSON.parse(JSON.stringify(result)).transactions[i].trx.transaction.actions[k].account}, ${JSON.parse(JSON.stringify(result)).transactions[i].trx.transaction.actions[k].name}, "${JSON.parse(JSON.stringify(result)).transactions[i].trx.transaction.actions[k].data.memo}"`
+      }
+    }
+    ctx.replyWithMarkdown(answer)
+    console.log(error, answer)
+  })
+})
 
 app.on('inline_query', async ({ inlineQuery, answerInlineQuery }) => {
   const offset = parseInt(inlineQuery.offset) || 0
