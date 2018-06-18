@@ -1,9 +1,12 @@
 require('dotenv').config()
 const dateFormat = require('dateformat')
+const formatAction = require('./lib/formatAction')
 const msg = require('./messages')
 const producerSearch = require('./lib/producerSearch')
 const formatProducersList = require('./lib/formatProducersList')
 const _ = require('lodash')
+
+const niceDate = (x) => dateFormat(Date.parse(x), '🗓 *ddd, mmm dS, yyyy, 🕐 h:MM:ss*')
 
 // Connect to MongoDB
 const mongoose = require('mongoose')
@@ -39,7 +42,7 @@ app.use(session())
 
 app.command('start', (ctx) =>
   ctx.replyWithMarkdown(msg.start, Markup
-    .keyboard([['info', 'help']])
+    .keyboard([['/info', '/help']])
     .resize()
     .extra()
   )
@@ -49,7 +52,7 @@ app.command('info', (ctx) => {
   eos.getInfo((error, result) => {
     console.log(error, JSON.stringify(result, null, 2))
     const info = 'chainId: ' + result.chain_id + '\n' +
-    '*' + dateFormat(Date.parse(result.head_block_time), '🗓 *ddd, mmm dS, yyyy, 🕐 h:MM:ss*') + '*\n' +
+    '*' + niceDate(result.head_block_time) + '*\n' +
     '🗳 block #*' + result.head_block_num + '* lib: *' + result.last_irreversible_block_num + '*\n 💼 producer: *' +
     result.head_block_producer + '*'
 
@@ -63,7 +66,79 @@ app.command('info', (ctx) => {
         ctx.replyWithMarkdown('There are no producers')
       }
     })
+  })
+})
 
+app.command('block', (ctx) => {
+  const {text} = ctx.message
+  const index = text.trim().indexOf(' ')
+  const query = index > 0 ? text.substr(index + 1) : ''
+
+  eos.getBlock({block_num_or_id: query}, (error, result) => {
+    if (error) return console.log(error)
+    console.log(result)
+    let reply = '🗳 block #*' + query + '* \n' + niceDate(result.timestamp) +
+    '*\n' + '💼 producer: *' + result.producer + '\n\n' +
+    'Transactions (account, name, memo):\n'
+    for (var i = 0; i < result.transactions.length; i++) {
+      for (var k = 0; k < result.transactions[i].trx.transaction.actions.length; k++) {
+        const memo = result.transactions[i].trx.transaction.actions[k].data.memo || ''
+        reply += '*' + result.transactions[i].trx.transaction.actions[k].account + '*, ' + result.transactions[i].trx.transaction.actions[k].name + ', \'' + memo + '\'\n'
+      }
+    }
+    ctx.replyWithMarkdown(reply)
+    console.log(error, reply)
+  })
+})
+
+app.command('account', (ctx) => {
+  const {text} = ctx.message
+  const index = text.trim().indexOf(' ')
+  const query = index > 0 ? text.substr(index + 1) : ''
+
+  eos.getAccount({'account_name': query}, (error, result) => {
+    if (error) return console.log(error)
+    console.log(result)
+    let text = '🗂 *' + result.account_name + '*\n' +
+      'created: ' + niceDate(result.created) + '\n' +
+      'last code update: ' + niceDate(result.last_code_update) + '\n'
+    text += result.core_liquid_balance ? 'balance: *' + result.core_liquid_balance + '*\n' : ''
+    if (result.total_resources) {
+      text += result.total_resources.cpu_weight ? 'cpu weight: ' + result.total_resources.cpu_weight + '\n' : ''
+      text += result.total_resources.net_weight ? 'net weight: ' + result.total_resources.net_weight + '\n' : ''
+      text += result.total_resources.ram_bytes ? 'ram bytes: ' + result.total_resources.ram_bytes + '\n' : ''
+    }
+    text += result.voter_info && result.voter_info.last_vote_weight ? 'last vote weight: ' + result.voter_info.last_vote_weight : ''
+    ctx.replyWithMarkdown(text)
+
+    // Fetch all assets for this account
+    eos.getCurrencyBalance({code: 'eosio.token', account_name: query, symbol: 'SYS'}, (error, result) => {
+      if (error) return console.log(error)
+      console.log('assets: ', result)
+
+      if (result.actions && result.actions.length > 0) {
+        // Sort actions by number
+        ctx.replyWithMarkdown('*Assets:*')
+        result.asset.forEach(asset => ctx.reply(asset))
+      }
+    })
+
+    // Fetch all actions for this account
+    eos.getActions({account_name: query, pos: 0, offset: 0}, (error, result) => {
+      if (error) return console.log(error)
+
+      if (result.actions && result.actions.length > 0) {
+        // Sort actions by number
+        const actions = result.actions.sort((a, b) => a.account_action_seq - b.account_action_seq)
+        console.log('actions: ', actions)
+        ctx.replyWithMarkdown('*Transactions:*')
+        actions.forEach((action) => {
+          const text = formatAction(action)
+          console.log(text)
+          ctx.replyWithHTML(text, {disable_web_page_preview: true})
+        })
+      }
+    })
   })
 })
 
@@ -118,6 +193,17 @@ app.command('watch_account', ctx => {
   }
 })
 
+app.command('stop', ctx => {
+  console.log('stop all subscriptions for this account ', ctx.message.from.id)
+  const query = JSON.parse('{ "users": {"from.id": ' + ctx.message.from.id + '}}')
+  console.log('query: ', query)
+  Account.deleteMany({}, (error) => {
+    if (error) return console.log(error)
+    console.log('all accounts deleted...')
+    ctx.reply('Done. All subscriptions deleted')
+  })
+})
+
 // List all accounts
 app.command('producers', ctx => {
   eos.getProducers({json: true, limit: 100}, (error, result) => {
@@ -129,22 +215,6 @@ app.command('producers', ctx => {
     }
   })
 })
-
-// // List all accounts
-// app.command('list', ctx => {
-//   Account.find((err, accounts) => {
-//     if (err) return console.error(err)
-//     else {
-//       if (accounts && accounts.length > 0) {
-//         console.log('found accounts: ', accounts)
-//         ctx.replyWithMarkdown(JSON.stringify(accounts))
-//       } else {
-//         console.log('there are no accounts to monitor')
-//         ctx.replyWithMarkdown('there are no accounts to monitor')
-//       }
-//     }
-//   })
-// })
 
 // launch account monitoring
 const monitorAccounts = require('./lib/monitorAccounts')

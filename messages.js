@@ -1,20 +1,24 @@
-const formatQuote = ({ quote, song, album }) => `
-${quote.title}
-
-_${song.title} (${album.title} ${album.year})_
-`
-
 const start = `
-Welcome to *EOS Info*,
-Your Telegram assistant for everything *EOS*.
-trained by *EOSNavigator.com* team.
+Welcome to *EOS Info bot*,
 
-type */info* to get current blockchain details
+Your Telegram assistant for everything *EOS*.
+trained by [*EOSNavigator.com*](http://eosnavigator.com) team.
+
+*/info* - get current blockchain details
+*/account* _account name_ - get account info
+*/producers* - top50 producers
+*/watch_account* _account name_ - subscribe to get messages every time there is a new transaction
+*/block* _block number_ - get block details
+*/stop* - cancel all subscriptions
 `
 
 const help = `
-type */info* to get current blockchain details
-
+*/info* - get current blockchain details
+*/account* _account name_ - get account info
+*/producers* - top50 producers
+*/watch_account* _account name_ - subscribe to get messages every time there is a new transaction
+*/block* _block number_ - get block details
+*/stop* - cancel all subscriptions
 `
 
-module.exports = { formatQuote, help, start }
+module.exports = { help, start }
