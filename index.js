@@ -204,7 +204,7 @@ app.command('stop', ctx => {
   })
 })
 
-// List all accounts
+// List all producers
 app.command('producers', ctx => {
   eos.getProducers({json: true, limit: 100}, (error, result) => {
     if (error) return console.log(error)
@@ -218,6 +218,9 @@ app.command('producers', ctx => {
 
 // launch account monitoring
 const monitorAccounts = require('./lib/monitorAccounts')
-setInterval(monitorAccounts, 2000)
+// setInterval(monitorAccounts, 2000)
+
+const dailyTop21 = require('./lib/dailyTop21')
+dailyTop21()
 
 module.exports = app
